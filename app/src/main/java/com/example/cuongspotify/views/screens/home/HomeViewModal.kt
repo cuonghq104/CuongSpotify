@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cuongspotify.configs.NetworkInstance
+import com.example.cuongspotify.models.Album
 import com.example.cuongspotify.models.BrowseCategory
 import com.example.cuongspotify.models.MusicTrack
 import com.example.cuongspotify.networks.HomeApi
@@ -25,6 +26,12 @@ class HomeViewModal: ViewModel() {
     private val _musicTrackLoading = MutableStateFlow(false)
     val musicTrackLoading = _musicTrackLoading.asStateFlow()
 
+    private val _albumNewRelease = MutableStateFlow(listOf<Album>())
+    val albumNewRelease = _albumNewRelease.asStateFlow()
+
+    private val _newReleaseAlbumLoading = MutableStateFlow(false)
+    val newReleaseAlbumLoading = _newReleaseAlbumLoading.asStateFlow()
+
     fun fetchMusicTrack(context: Context) {
         val exceptionHandler = CoroutineExceptionHandler{_, exception ->
             run {
@@ -42,4 +49,20 @@ class HomeViewModal: ViewModel() {
         }
     }
 
+    fun fetchNewReleaseAlbum(context: Context) {
+        viewModelScope.launch {
+            _newReleaseAlbumLoading.value = true
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    val homeApis = NetworkInstance.getInstance(context).create(HomeApi::class.java)
+                    return@withContext homeApis.getAlbumNewRelease().body()
+                }
+                result?.albums?.items?.let {
+                    _albumNewRelease.value = it
+                }
+            } finally {
+                _newReleaseAlbumLoading.value = false
+            }
+        }
+    }
 }

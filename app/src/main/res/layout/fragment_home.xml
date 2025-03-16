@@ -12,13 +12,28 @@
         android:layout_marginTop="@dimen/screenPadding"
         android:paddingHorizontal="@dimen/screenPadding"
         android:textColor="@color/white"
-        android:textSize="16sp"
+        android:textSize="32sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Top songs" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvTopSong"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:layout_marginTop="@dimen/screenPadding"
+        android:paddingHorizontal="@dimen/screenPadding"
+        android:textColor="@color/white"
+        android:textSize="32sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="New Release" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvAlbumNewRelease"
         android:layout_marginTop="8dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
