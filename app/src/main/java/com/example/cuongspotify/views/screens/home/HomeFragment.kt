@@ -16,9 +16,12 @@ import com.example.cuongspotify.R
 import com.example.cuongspotify.configs.extensions.addScrollToEndListener
 import com.example.cuongspotify.databinding.FragmentHomeBinding
 import com.example.cuongspotify.views.components.spacings.MarginItemDecoration
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeFragment : Fragment() {
 
@@ -97,6 +100,14 @@ class HomeFragment : Fragment() {
                         newReleaseAdapter.data = it
                         newReleaseAdapter.notifyDataSetChanged()
                     }
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            with(viewModel) {
+                error.debounce(300L).collect {
+                    Log.d("TAG", it)
                 }
             }
         }

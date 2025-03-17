@@ -12,7 +12,9 @@ import com.example.cuongspotify.networks.HomeApi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,10 +34,13 @@ class HomeViewModal: ViewModel() {
     private val _newReleaseAlbumLoading = MutableStateFlow(false)
     val newReleaseAlbumLoading = _newReleaseAlbumLoading.asStateFlow()
 
+    private val _error = MutableSharedFlow<String>()
+    val error = _error.asSharedFlow()
+
     fun fetchMusicTrack(context: Context) {
         val exceptionHandler = CoroutineExceptionHandler{_, exception ->
-            run {
-                Log.d("Exception", exception.toString())
+            viewModelScope.launch(Dispatchers.Main) {
+                _error.emit("error::category")
             }
         }
         viewModelScope.launch(exceptionHandler) {
@@ -50,7 +55,12 @@ class HomeViewModal: ViewModel() {
     }
 
     fun fetchNewReleaseAlbum(context: Context) {
-        viewModelScope.launch {
+        val exceptionHandler = CoroutineExceptionHandler{_, exception ->
+            viewModelScope.launch(Dispatchers.Main) {
+                _error.emit("error::new_release")
+            }
+        }
+        viewModelScope.launch(exceptionHandler) {
             _newReleaseAlbumLoading.value = true
             try {
                 val result = withContext(Dispatchers.IO) {
