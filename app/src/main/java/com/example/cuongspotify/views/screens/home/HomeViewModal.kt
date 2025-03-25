@@ -22,6 +22,9 @@ import retrofit2.create
 
 class HomeViewModal: ViewModel() {
 
+    private val _currentPlayingTrack = MutableStateFlow<MusicTrack?>(null)
+    val currentPlayingTrack = _currentPlayingTrack.asStateFlow()
+
     private val _musicTrack = MutableStateFlow(listOf<BrowseCategory>())
     val musicTrack = _musicTrack.asStateFlow()
 
@@ -33,6 +36,12 @@ class HomeViewModal: ViewModel() {
 
     private val _newReleaseAlbumLoading = MutableStateFlow(false)
     val newReleaseAlbumLoading = _newReleaseAlbumLoading.asStateFlow()
+
+    private val _topTrack = MutableStateFlow(listOf<MusicTrack>())
+    val topTrack = _topTrack.asStateFlow()
+
+    private val _topTrackLoading = MutableStateFlow(false)
+    val topTrackLoading = _topTrackLoading.asStateFlow()
 
     private val _error = MutableSharedFlow<String>()
     val error = _error.asSharedFlow()
@@ -74,5 +83,32 @@ class HomeViewModal: ViewModel() {
                 _newReleaseAlbumLoading.value = false
             }
         }
+    }
+
+    fun fetchTopTrack(context: Context) {
+        val exceptionHandler = CoroutineExceptionHandler{_, exception ->
+            viewModelScope.launch(Dispatchers.Main) {
+                _error.emit("error::top_track")
+            }
+        }
+
+        viewModelScope.launch(exceptionHandler) {
+            _topTrackLoading.value = true
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    val homeApis = NetworkInstance.getInstance(context).create(HomeApi::class.java)
+                    return@withContext homeApis.getTopTrack().body()
+                }
+                result?.items?.let {
+                    _topTrack.value = it
+                }
+            } finally {
+                _topTrackLoading.value = false
+            }
+        }
+    }
+
+    fun setCurrentPlayingTrack(track: MusicTrack) {
+        _currentPlayingTrack.value = track
     }
 }

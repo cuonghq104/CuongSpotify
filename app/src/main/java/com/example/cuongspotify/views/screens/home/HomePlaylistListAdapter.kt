@@ -9,21 +9,23 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import coil3.load
 import com.example.cuongspotify.databinding.ItemHomeAlbumBinding
+import com.example.cuongspotify.databinding.ItemHomeTopTrackBinding
 import com.example.cuongspotify.databinding.ItemPlaylistRowBinding
 import com.example.cuongspotify.models.BrowseCategory
 import com.example.cuongspotify.models.HomeListItem
-import com.example.cuongspotify.models.MusicTrack
 
-class HomePlaylistListAdapter(var type: ModelType, var data: List<HomeListItem>): RecyclerView.Adapter<HomePlaylistListAdapter.ViewHolder>() {
+class HomePlaylistListAdapter(var type: ModelType, var data: List<HomeListItem>, var onItemClick: ((item: HomeListItem) -> Unit)?): RecyclerView.Adapter<HomePlaylistListAdapter.ViewHolder>() {
 
     enum class ModelType {
         CATEGORY,
-        ALBUM
+        ALBUM,
+        TRACK
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = when (type) {
             ModelType.CATEGORY -> ItemPlaylistRowBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            ModelType.TRACK -> ItemHomeTopTrackBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             else -> ItemHomeAlbumBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         }
         return ViewHolder(binding)
@@ -43,12 +45,24 @@ class HomePlaylistListAdapter(var type: ModelType, var data: List<HomeListItem>)
                 }
             }
 
+            ModelType.TRACK -> {
+                with(holder.binding as ItemHomeTopTrackBinding) {
+                    tvTitle.text = track.getTitle() ?: "Unknown album"
+                    tvSubtitle.text = track.getSubtitle() ?: "Unknown artist"
+                    imvTrack.load(track.getImageUrl())
+                    clContainer.setOnClickListener {
+                        onItemClick?.let {
+                            it(track)
+                        }
+                    }
+                }
+            }
+
             ModelType.ALBUM -> {
                 with(holder.binding as ItemHomeAlbumBinding) {
                     tvName.text = track.getTitle() ?: "Unknown album"
                     tvSubtitle.text = track.getSubtitle() ?: "Unknown artist"
                     imvPlaylist.load(track.getImageUrl())
-
                 }
             }
         }

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    android:orientation="vertical"
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,33 +7,56 @@
     android:background="@color/black"
     tools:context=".views.screens.home.HomeFragment">
 
-    <TextView
-        android:layout_marginTop="@dimen/screenPadding"
-        android:paddingHorizontal="@dimen/screenPadding"
-        android:textColor="@color/white"
-        android:textSize="32sp"
+    <LinearLayout
+        android:paddingBottom="64dp"
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Top songs" />
+        android:layout_height="wrap_content">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvTopSong"
-        android:layout_marginTop="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <TextView
+            android:layout_marginTop="@dimen/screenPadding"
+            android:paddingHorizontal="@dimen/screenPadding"
+            android:textColor="@color/white"
+            android:textSize="32sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Top songs" />
 
-    <TextView
-        android:layout_marginTop="@dimen/screenPadding"
-        android:paddingHorizontal="@dimen/screenPadding"
-        android:textColor="@color/white"
-        android:textSize="32sp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="New Release" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTopSong"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvAlbumNewRelease"
-        android:layout_marginTop="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-</LinearLayout>
+        <TextView
+            android:layout_marginTop="@dimen/screenPadding"
+            android:paddingHorizontal="@dimen/screenPadding"
+            android:textColor="@color/white"
+            android:textSize="32sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="New Release" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAlbumNewRelease"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:layout_marginTop="@dimen/screenPadding"
+            android:paddingHorizontal="@dimen/screenPadding"
+            android:textColor="@color/white"
+            android:textSize="32sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Top tracks" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTopTrack"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+</ScrollView>

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -28,6 +29,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        compose = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -63,5 +65,13 @@ dependencies {
     implementation(libs.retrofit)
     // gson converter
     implementation(libs.retrofit2.converter.gson)
-
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
+    // Optional - Integration with activities
+    implementation(libs.androidx.activity.compose)
+    // Optional - Integration with ViewModels
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // Optional - Integration with LiveData
+    implementation(libs.androidx.runtime.livedata)
 }

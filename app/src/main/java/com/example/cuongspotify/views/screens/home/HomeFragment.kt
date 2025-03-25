@@ -10,11 +10,13 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cuongspotify.R
 import com.example.cuongspotify.configs.extensions.addScrollToEndListener
 import com.example.cuongspotify.databinding.FragmentHomeBinding
+import com.example.cuongspotify.models.MusicTrack
 import com.example.cuongspotify.views.components.spacings.MarginItemDecoration
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collect
@@ -30,10 +32,18 @@ class HomeFragment : Fragment() {
 
     private val viewModel: HomeViewModal by activityViewModels()
 
-    private val listAdapter: HomePlaylistListAdapter = HomePlaylistListAdapter(HomePlaylistListAdapter.ModelType.CATEGORY, listOf())
+    private val listAdapter: HomePlaylistListAdapter = HomePlaylistListAdapter(HomePlaylistListAdapter.ModelType.CATEGORY, listOf()) {
 
-    private val newReleaseAdapter: HomePlaylistListAdapter = HomePlaylistListAdapter(HomePlaylistListAdapter.ModelType.ALBUM, listOf())
+    }
 
+    private val newReleaseAdapter: HomePlaylistListAdapter = HomePlaylistListAdapter(HomePlaylistListAdapter.ModelType.ALBUM, listOf()) {
+
+    }
+
+    private val topTrackAdapter: HomePlaylistListAdapter = HomePlaylistListAdapter(HomePlaylistListAdapter.ModelType.TRACK, listOf()) {
+        findNavController().navigate(R.id.action_homeFragment_to_playerFragment)
+        viewModel.setCurrentPlayingTrack(it as MusicTrack)
+    }
     private var flag = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +73,11 @@ class HomeFragment : Fragment() {
             rvAlbumNewRelease.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             rvAlbumNewRelease.addItemDecoration(MarginItemDecoration(requireContext(), requireContext().resources.getDimensionPixelSize(
                 R.dimen.recyclerViewItemSpacing), LinearLayoutManager.HORIZONTAL))
+
+            rvTopTrack.adapter = topTrackAdapter
+            rvTopTrack.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            rvTopTrack.addItemDecoration(MarginItemDecoration(requireContext(), requireContext().resources.getDimensionPixelSize(
+                R.dimen.recyclerViewItemSpacingSmall), LinearLayoutManager.HORIZONTAL))
         }
     }
 
@@ -70,6 +85,7 @@ class HomeFragment : Fragment() {
     private fun initData() {
         viewModel.fetchMusicTrack(requireContext())
         viewModel.fetchNewReleaseAlbum(requireContext())
+        viewModel.fetchTopTrack(requireContext())
     }
 
     private fun addListener() {
@@ -99,6 +115,17 @@ class HomeFragment : Fragment() {
                     albumNewRelease.collectLatest {
                         newReleaseAdapter.data = it
                         newReleaseAdapter.notifyDataSetChanged()
+                    }
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                with(viewModel) {
+                    topTrack.collectLatest {
+                        topTrackAdapter.data = it
+                        topTrackAdapter.notifyDataSetChanged()
                     }
                 }
             }
