@@ -74,4 +74,5 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // Optional - Integration with LiveData
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.material)
 }

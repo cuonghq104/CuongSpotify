@@ -1,24 +1,15 @@
 package com.example.cuongspotify.views.screens.player
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,35 +18,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material.Slider
+import androidx.compose.material.SliderDefaults
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -64,25 +48,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import coil3.compose.AsyncImage
 import com.example.cuongspotify.R
 import com.example.cuongspotify.views.screens.home.HomeViewModal
 
@@ -106,9 +85,7 @@ class PlayerFragment : Fragment() {
                 val search = rememberSaveable {
                     mutableStateOf("")
                 }
-
                 PlayerScreen()
-
             }
         }
     }
@@ -116,20 +93,20 @@ class PlayerFragment : Fragment() {
     @Preview(showBackground = true)
     @Composable
     fun PlayerScreen() {
-        var isRotating by remember { mutableStateOf(true) }
+        var isRotating = remember { mutableStateOf(true) }
         val rotationAngle = remember { Animatable(0f) }
 
-        LaunchedEffect(isRotating) {
-            if (isRotating) {
+        LaunchedEffect(isRotating.value) {
+            if (isRotating.value) {
                 rotationAngle.animateTo(
                     targetValue = rotationAngle.value + 360f,
                     animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = 4000, easing = LinearEasing),
+                        animation = tween(durationMillis = 15000, easing = LinearEasing),
                         repeatMode = RepeatMode.Restart
                     )
                 )
             } else {
-                rotationAngle.stop() // Dừng ngay lập tức, không gây nháy
+                rotationAngle.stop()
             }
         }
 
@@ -151,12 +128,118 @@ class PlayerFragment : Fragment() {
                             .graphicsLayer(rotationZ = rotationAngle.value),
                         contentScale = ContentScale.Crop
                     )
-                    ElevatedButton(onClick = {isRotating = !isRotating}, modifier = Modifier.padding(0.dp, 16.dp, 0.dp, 0.dp)) {
-                        Text(text = "Click")
-                    }
+                    TrackNameAndArtist()
+                    TrackProgress()
+                    PlayerControl(isRotating)
+//                    ElevatedButton(onClick = { isRotating = !isRotating }, modifier = Modifier.padding(0.dp, 16.dp, 0.dp, 0.dp)) {
+//                        Text(text = "Click")
+//                    }
                 }
             }
         )
+    }
+
+    @Composable
+    fun PlayerControl(isRotating: MutableState<Boolean>) {
+        Row(
+            modifier = Modifier
+                .padding(0.dp, 16.dp, 0.dp, 0.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            PlayerIconButton(
+                painter = painterResource(id = R.drawable.baseline_shuffle_24),
+                contentDescription = "Shuffle",
+                size = 24.dp
+            ) {
+
+            }
+            PlayerIconButton(
+                painter = painterResource(id = R.drawable.baseline_arrow_left_24),
+                contentDescription = "Prev"
+            ) {
+
+            }
+            FilledIconToggleButton(
+                checked = isRotating.value,
+                onCheckedChange = {
+                    isRotating.value = it
+                },
+                modifier = Modifier.size(64.dp)
+            ) {
+                Icon(
+                    painter = if (isRotating.value) painterResource(id = R.drawable.baseline_pause_24) else painterResource(id = R.drawable.baseline_play_arrow_24),
+                    contentDescription = "Play", modifier = Modifier.size(32.dp)
+                )
+            }
+            PlayerIconButton(
+                painter = painterResource(id = R.drawable.baseline_arrow_right_24),
+                contentDescription = "Next"
+            ) {
+
+            }
+            PlayerIconButton(
+                painter = painterResource(id = R.drawable.baseline_repeat_24),
+                contentDescription = "Repeat",
+                size = 24.dp
+            ) {
+
+            }
+        }
+    }
+
+    @Composable
+    fun PlayerIconButton(
+        painter: Painter? = null,
+        imageVector: ImageVector? = null,
+        contentDescription: String,
+        size: Dp? = null,
+        onClick: () -> Unit
+    ) {
+        IconButton(onClick = onClick) {
+            painter?.let {
+                Icon(painter = it, contentDescription = contentDescription, modifier = Modifier.size(size ?: 32.dp))
+            } ?: imageVector?.let {
+                Icon(it, contentDescription = contentDescription, modifier = Modifier.size(size ?: 32.dp))
+            }
+        }
+    }
+
+    @Composable
+    fun TrackNameAndArtist() {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp, 16.dp, 16.dp, 0.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Mùa mưa ấy", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Vũ.", fontSize = 16.sp)
+            }
+            IconButton(modifier = Modifier.size(24.dp), onClick = { /*TODO*/ }) {
+                Icon(painter = painterResource(id = R.drawable.baseline_add_circle_outline_24), contentDescription = "Add icon")
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun TrackProgress() {
+        var sliderPosition by remember {
+            mutableFloatStateOf(0.5f)
+        }
+        Column(modifier = Modifier.padding(8.dp, 0.dp, 8.dp, 0.dp)) {
+            Slider(
+                value = sliderPosition,
+                onValueChange = { sliderPosition = it },
+                modifier = Modifier.height(16.dp),
+            )
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp, 4.dp, 8.dp, 0.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(text = "00:00")
+                Text(text = "04:00")
+            }
+        }
     }
 
 //    @Composable
