@@ -5,6 +5,14 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -45,16 +53,20 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
@@ -62,6 +74,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -94,204 +107,238 @@ class PlayerFragment : Fragment() {
                     mutableStateOf("")
                 }
 
-                Scaffold(
-                    content = { innerPadding ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding),
-                        ) {
-                            SearchBar(search)
-                            ListRow()
-                            GridView(search)
-                        }
-                    }
-                )
+                PlayerScreen()
 
-            }
-        }
-    }
-
-    @Composable
-    fun Greeting(name: String, modifier: Modifier = Modifier) {
-        Row {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(items = arrayOf(
-                    Triple("Nam", Color.Red, Color.Green),
-                    Triple("Ousmane", Color.Green, Color.Blue)
-                )) { item ->
-                    RowItem(item)
-                }
-            }
-            Surface {
-                ElevatedButton(
-                    modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 0.dp),
-                    onClick = { /*TODO*/ }
-                ) {
-                    Text(text = "Add more")
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun RowItem(item: Triple<String, Color, Color>) {
-        val expanded = rememberSaveable {
-            mutableStateOf(false)
-        }
-        Card {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(item.second)
-                ) {
-                    Text(
-                        text = "Hello ${item.first}", modifier = Modifier
-                            .weight(1f)
-                            .border(1.dp, item.third, RoundedCornerShape(8.dp))
-                            .align(Alignment.CenterVertically)
-                    )
-                    ElevatedButton(
-                        modifier = Modifier.width(100.dp),
-                        onClick = {
-                            expanded.value = !expanded.value
-                        }) {
-                        Text(text = if (!expanded.value) "Detail" else "Hide")
-                    }
-                }
-                if (expanded.value) {
-                    Surface {
-                        Text(
-                            fontSize = 16.sp,
-                            text = "In Jetpack Compose, there's no direct equivalent of View.GONE from XML. Instead, you can control visibility using if conditions or Modifier.height(0.dp).")
-                    }
-                }
             }
         }
     }
 
     @Preview(showBackground = true)
     @Composable
-    fun ListRow() {
-        Column (modifier = Modifier.fillMaxWidth()) {
-            LazyRow (
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(items = arrayOf(
-                    Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-                    Triple("Robert Downey JR", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-                    Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green)
-                )) {
-                    item -> Column {
-                        AsyncImage(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop,
-                            model = item.second,
-                            contentDescription = "Profile"
-                        )
-                        Text(text = item.first, modifier = Modifier
-                            .width(80.dp)
-                            .padding(0.dp, 8.dp, 0.dp, 0.dp), textAlign = TextAlign.Center)
-                    }
-                }
-            }
-        }
-    }
+    fun PlayerScreen() {
+        var isRotating by remember { mutableStateOf(true) }
+        val rotationAngle = remember { Animatable(0f) }
 
-    @OptIn(ExperimentalFoundationApi::class)
-    @Composable
-    fun GridView(search: MutableState<String>) {
-        val items = arrayOf(
-            Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-            Triple("Robert Downey JRRRRR", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-            Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green)
-        ).filter {
-            it.first.startsWith(search.value, ignoreCase = true)
-        }
-        Column(modifier = Modifier.fillMaxWidth()) {
-            LazyHorizontalGrid(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                rows = GridCells.Fixed(2),
-                modifier = Modifier
-                    .height(128.dp)
-                    .scrollable(
-                        state = rememberScrollState(),
-                        orientation = Orientation.Horizontal,
-                        overscrollEffect = null
+        LaunchedEffect(isRotating) {
+            if (isRotating) {
+                rotationAngle.animateTo(
+                    targetValue = rotationAngle.value + 360f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 4000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart
                     )
-            ) {
-                items(items = items) {
-                    item -> Card(modifier = Modifier.wrapContentHeight()) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.wrapContentHeight()) {
-                            AsyncImage(
-                                modifier = Modifier
-                                    .size(60.dp),
-                                contentScale = ContentScale.Crop,
-                                model = item.second,
-                                contentDescription = "Profile"
-                            )
-                            Text(text = item.first, modifier = Modifier
-                                .width(160.dp), textAlign = TextAlign.Center)
-                        }
+                )
+            } else {
+                rotationAngle.stop() // Dừng ngay lập tức, không gây nháy
+            }
+        }
+
+
+        Scaffold(
+            content = { innerPadding ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.test),
+                        contentDescription = "test",
+                        modifier = Modifier
+                            .size(300.dp)
+                            .clip(CircleShape)
+                            .graphicsLayer(rotationZ = rotationAngle.value),
+                        contentScale = ContentScale.Crop
+                    )
+                    ElevatedButton(onClick = {isRotating = !isRotating}, modifier = Modifier.padding(0.dp, 16.dp, 0.dp, 0.dp)) {
+                        Text(text = "Click")
                     }
                 }
             }
-        }
-    }
-
-    @Composable
-    fun SearchBar(search: MutableState<String>) {
-        val focusManager = LocalFocusManager.current
-        TextField(
-            value = search.value,
-            onValueChange = {
-                search.value = it
-            },
-            singleLine = true,
-            textStyle = TextStyle(
-                fontSize = 20.sp,
-                color = Color.Blue
-            ),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Red,
-                unfocusedLabelColor = Color.Green
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp, 0.dp, 16.dp, 0.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, Color.Black, RoundedCornerShape(16.dp)),
-            placeholder = {
-                Text(text = "Search here", color = Color.Cyan, fontSize = 14.sp)
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "searchIcon",
-                    tint = Color.Cyan,
-                    modifier = Modifier
-                        .width(64.dp)
-                        .height(64.dp)
-                )
-            },
-            keyboardActions = KeyboardActions(
-                onDone = { focusManager.clearFocus() }
-            )
         )
     }
 
-    @Composable
-    fun GreetingPreview() {
-        MaterialTheme {
-            Greeting("Boiz")
-        }
-    }
+//    @Composable
+//    fun Greeting(name: String, modifier: Modifier = Modifier) {
+//        Row {
+//            LazyColumn(
+//                verticalArrangement = Arrangement.spacedBy(8.dp),
+//                modifier = Modifier.weight(1f)
+//            ) {
+//                items(items = arrayOf(
+//                    Triple("Nam", Color.Red, Color.Green),
+//                    Triple("Ousmane", Color.Green, Color.Blue)
+//                )) { item ->
+//                    RowItem(item)
+//                }
+//            }
+//            Surface {
+//                ElevatedButton(
+//                    modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 0.dp),
+//                    onClick = { /*TODO*/ }
+//                ) {
+//                    Text(text = "Add more")
+//                }
+//            }
+//        }
+//    }
+//
+//    @Composable
+//    fun RowItem(item: Triple<String, Color, Color>) {
+//        val expanded = rememberSaveable {
+//            mutableStateOf(false)
+//        }
+//        Card {
+//            Column {
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .background(item.second)
+//                ) {
+//                    Text(
+//                        text = "Hello ${item.first}", modifier = Modifier
+//                            .weight(1f)
+//                            .border(1.dp, item.third, RoundedCornerShape(8.dp))
+//                            .align(Alignment.CenterVertically)
+//                    )
+//                    ElevatedButton(
+//                        modifier = Modifier.width(100.dp),
+//                        onClick = {
+//                            expanded.value = !expanded.value
+//                        }) {
+//                        Text(text = if (!expanded.value) "Detail" else "Hide")
+//                    }
+//                }
+//                if (expanded.value) {
+//                    Surface {
+//                        Text(
+//                            fontSize = 16.sp,
+//                            text = "In Jetpack Compose, there's no direct equivalent of View.GONE from XML. Instead, you can control visibility using if conditions or Modifier.height(0.dp).")
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    @Preview(showBackground = true)
+//    @Composable
+//    fun ListRow() {
+//        Column (modifier = Modifier.fillMaxWidth()) {
+//            LazyRow (
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                items(items = arrayOf(
+//                    Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
+//                    Triple("Robert Downey JR", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
+//                    Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green)
+//                )) {
+//                    item -> Column {
+//                        AsyncImage(
+//                            modifier = Modifier
+//                                .size(80.dp)
+//                                .clip(CircleShape),
+//                            contentScale = ContentScale.Crop,
+//                            model = item.second,
+//                            contentDescription = "Profile"
+//                        )
+//                        Text(text = item.first, modifier = Modifier
+//                            .width(80.dp)
+//                            .padding(0.dp, 8.dp, 0.dp, 0.dp), textAlign = TextAlign.Center)
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    @OptIn(ExperimentalFoundationApi::class)
+//    @Composable
+//    fun GridView(search: MutableState<String>) {
+//        val items = arrayOf(
+//            Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
+//            Triple("Robert Downey JRRRRR", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
+//            Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green)
+//        ).filter {
+//            it.first.startsWith(search.value, ignoreCase = true)
+//        }
+//        Column(modifier = Modifier.fillMaxWidth()) {
+//            LazyHorizontalGrid(
+//                horizontalArrangement = Arrangement.spacedBy(8.dp),
+//                verticalArrangement = Arrangement.spacedBy(8.dp),
+//                rows = GridCells.Fixed(2),
+//                modifier = Modifier
+//                    .height(128.dp)
+//                    .scrollable(
+//                        state = rememberScrollState(),
+//                        orientation = Orientation.Horizontal,
+//                        overscrollEffect = null
+//                    )
+//            ) {
+//                items(items = items) {
+//                    item -> Card(modifier = Modifier.wrapContentHeight()) {
+//                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.wrapContentHeight()) {
+//                            AsyncImage(
+//                                modifier = Modifier
+//                                    .size(60.dp),
+//                                contentScale = ContentScale.Crop,
+//                                model = item.second,
+//                                contentDescription = "Profile"
+//                            )
+//                            Text(text = item.first, modifier = Modifier
+//                                .width(160.dp), textAlign = TextAlign.Center)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    @Composable
+//    fun SearchBar(search: MutableState<String>) {
+//        val focusManager = LocalFocusManager.current
+//        TextField(
+//            value = search.value,
+//            onValueChange = {
+//                search.value = it
+//            },
+//            singleLine = true,
+//            textStyle = TextStyle(
+//                fontSize = 20.sp,
+//                color = Color.Blue
+//            ),
+//            colors = TextFieldDefaults.colors(
+//                focusedContainerColor = Color.Red,
+//                unfocusedLabelColor = Color.Green
+//            ),
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(16.dp, 0.dp, 16.dp, 0.dp)
+//                .clip(RoundedCornerShape(16.dp))
+//                .border(1.dp, Color.Black, RoundedCornerShape(16.dp)),
+//            placeholder = {
+//                Text(text = "Search here", color = Color.Cyan, fontSize = 14.sp)
+//            },
+//            leadingIcon = {
+//                Icon(
+//                    imageVector = Icons.Default.Search,
+//                    contentDescription = "searchIcon",
+//                    tint = Color.Cyan,
+//                    modifier = Modifier
+//                        .width(64.dp)
+//                        .height(64.dp)
+//                )
+//            },
+//            keyboardActions = KeyboardActions(
+//                onDone = { focusManager.clearFocus() }
+//            )
+//        )
+//    }
+//
+//    @Composable
+//    fun GreetingPreview() {
+//        MaterialTheme {
+//            Greeting("Boiz")
+//        }
+//    }
 }
