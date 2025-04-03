@@ -1,5 +1,6 @@
 package com.example.cuongspotify.views.screens.player
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -43,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +74,8 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.example.cuongspotify.R
 import com.example.cuongspotify.views.screens.home.HomeViewModal
+import com.example.cuongspotify.views.screens.home.MusicStateViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class PlayerFragment : Fragment() {
 
@@ -108,12 +112,12 @@ class PlayerFragment : Fragment() {
 
     @Preview(showBackground = true)
     @Composable
-    fun PlayerScreen() {
-        var isRotating = remember { mutableStateOf(true) }
+    fun PlayerScreen(musicViewModel: MusicStateViewModel = viewModel()) {
+        val isRotating by musicViewModel.isPlaying.collectAsState()
         val rotationAngle = remember { Animatable(0f) }
 
-        LaunchedEffect(isRotating.value) {
-            if (isRotating.value) {
+        LaunchedEffect(isRotating) {
+            if (isRotating) {
                 rotationAngle.animateTo(
                     targetValue = rotationAngle.value + 360f,
                     animationSpec = infiniteRepeatable(
@@ -149,6 +153,7 @@ class PlayerFragment : Fragment() {
                         .fillMaxSize()
                         .padding(innerPadding),
                 ) {
+                    Text(text = if (isRotating) "OK" else "NOT")
                     Image(
                         painter = painterResource(id = R.drawable.test),
                         contentDescription = "test",
@@ -161,16 +166,13 @@ class PlayerFragment : Fragment() {
                     TrackNameAndArtist()
                     TrackProgress()
                     PlayerControl(isRotating)
-//                    ElevatedButton(onClick = { isRotating = !isRotating }, modifier = Modifier.padding(0.dp, 16.dp, 0.dp, 0.dp)) {
-//                        Text(text = "Click")
-//                    }
                 }
             }
         )
     }
 
     @Composable
-    fun PlayerControl(isRotating: MutableState<Boolean>) {
+    fun PlayerControl(isRotating: Boolean) {
         Row(
             modifier = Modifier
                 .padding(0.dp, 16.dp, 0.dp, 0.dp)
@@ -192,14 +194,16 @@ class PlayerFragment : Fragment() {
 
             }
             FilledIconToggleButton(
-                checked = isRotating.value,
+                checked = isRotating,
                 onCheckedChange = {
-                    isRotating.value = it
+                    val serviceIntent = Intent(requireContext(), MusicPlayerService::class.java)
+                    serviceIntent.putExtra(MusicPlayerService.INTENT_KEY_COMMAND, if (it) MusicPlayerService.ServiceCommand.RESUME.value else MusicPlayerService.ServiceCommand.PAUSE.value)
+                    requireContext().startService(serviceIntent)
                 },
                 modifier = Modifier.size(64.dp)
             ) {
                 Icon(
-                    painter = if (isRotating.value) painterResource(id = R.drawable.baseline_pause_24) else painterResource(id = R.drawable.baseline_play_arrow_24),
+                    painter = if (isRotating) painterResource(id = R.drawable.baseline_pause_24) else painterResource(id = R.drawable.baseline_play_arrow_24),
                     contentDescription = "Play", modifier = Modifier.size(32.dp)
                 )
             }
@@ -271,187 +275,4 @@ class PlayerFragment : Fragment() {
             }
         }
     }
-
-//    @Composable
-//    fun Greeting(name: String, modifier: Modifier = Modifier) {
-//        Row {
-//            LazyColumn(
-//                verticalArrangement = Arrangement.spacedBy(8.dp),
-//                modifier = Modifier.weight(1f)
-//            ) {
-//                items(items = arrayOf(
-//                    Triple("Nam", Color.Red, Color.Green),
-//                    Triple("Ousmane", Color.Green, Color.Blue)
-//                )) { item ->
-//                    RowItem(item)
-//                }
-//            }
-//            Surface {
-//                ElevatedButton(
-//                    modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 0.dp),
-//                    onClick = { /*TODO*/ }
-//                ) {
-//                    Text(text = "Add more")
-//                }
-//            }
-//        }
-//    }
-//
-//    @Composable
-//    fun RowItem(item: Triple<String, Color, Color>) {
-//        val expanded = rememberSaveable {
-//            mutableStateOf(false)
-//        }
-//        Card {
-//            Column {
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .background(item.second)
-//                ) {
-//                    Text(
-//                        text = "Hello ${item.first}", modifier = Modifier
-//                            .weight(1f)
-//                            .border(1.dp, item.third, RoundedCornerShape(8.dp))
-//                            .align(Alignment.CenterVertically)
-//                    )
-//                    ElevatedButton(
-//                        modifier = Modifier.width(100.dp),
-//                        onClick = {
-//                            expanded.value = !expanded.value
-//                        }) {
-//                        Text(text = if (!expanded.value) "Detail" else "Hide")
-//                    }
-//                }
-//                if (expanded.value) {
-//                    Surface {
-//                        Text(
-//                            fontSize = 16.sp,
-//                            text = "In Jetpack Compose, there's no direct equivalent of View.GONE from XML. Instead, you can control visibility using if conditions or Modifier.height(0.dp).")
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    @Preview(showBackground = true)
-//    @Composable
-//    fun ListRow() {
-//        Column (modifier = Modifier.fillMaxWidth()) {
-//            LazyRow (
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.spacedBy(8.dp)
-//            ) {
-//                items(items = arrayOf(
-//                    Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-//                    Triple("Robert Downey JR", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-//                    Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green)
-//                )) {
-//                    item -> Column {
-//                        AsyncImage(
-//                            modifier = Modifier
-//                                .size(80.dp)
-//                                .clip(CircleShape),
-//                            contentScale = ContentScale.Crop,
-//                            model = item.second,
-//                            contentDescription = "Profile"
-//                        )
-//                        Text(text = item.first, modifier = Modifier
-//                            .width(80.dp)
-//                            .padding(0.dp, 8.dp, 0.dp, 0.dp), textAlign = TextAlign.Center)
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    @OptIn(ExperimentalFoundationApi::class)
-//    @Composable
-//    fun GridView(search: MutableState<String>) {
-//        val items = arrayOf(
-//            Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-//            Triple("Robert Downey JRRRRR", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green),
-//            Triple("Ian McKellen", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/SDCC13_-_Ian_McKellen.jpg/1200px-SDCC13_-_Ian_McKellen.jpg", Color.Green)
-//        ).filter {
-//            it.first.startsWith(search.value, ignoreCase = true)
-//        }
-//        Column(modifier = Modifier.fillMaxWidth()) {
-//            LazyHorizontalGrid(
-//                horizontalArrangement = Arrangement.spacedBy(8.dp),
-//                verticalArrangement = Arrangement.spacedBy(8.dp),
-//                rows = GridCells.Fixed(2),
-//                modifier = Modifier
-//                    .height(128.dp)
-//                    .scrollable(
-//                        state = rememberScrollState(),
-//                        orientation = Orientation.Horizontal,
-//                        overscrollEffect = null
-//                    )
-//            ) {
-//                items(items = items) {
-//                    item -> Card(modifier = Modifier.wrapContentHeight()) {
-//                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.wrapContentHeight()) {
-//                            AsyncImage(
-//                                modifier = Modifier
-//                                    .size(60.dp),
-//                                contentScale = ContentScale.Crop,
-//                                model = item.second,
-//                                contentDescription = "Profile"
-//                            )
-//                            Text(text = item.first, modifier = Modifier
-//                                .width(160.dp), textAlign = TextAlign.Center)
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    @Composable
-//    fun SearchBar(search: MutableState<String>) {
-//        val focusManager = LocalFocusManager.current
-//        TextField(
-//            value = search.value,
-//            onValueChange = {
-//                search.value = it
-//            },
-//            singleLine = true,
-//            textStyle = TextStyle(
-//                fontSize = 20.sp,
-//                color = Color.Blue
-//            ),
-//            colors = TextFieldDefaults.colors(
-//                focusedContainerColor = Color.Red,
-//                unfocusedLabelColor = Color.Green
-//            ),
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp, 0.dp, 16.dp, 0.dp)
-//                .clip(RoundedCornerShape(16.dp))
-//                .border(1.dp, Color.Black, RoundedCornerShape(16.dp)),
-//            placeholder = {
-//                Text(text = "Search here", color = Color.Cyan, fontSize = 14.sp)
-//            },
-//            leadingIcon = {
-//                Icon(
-//                    imageVector = Icons.Default.Search,
-//                    contentDescription = "searchIcon",
-//                    tint = Color.Cyan,
-//                    modifier = Modifier
-//                        .width(64.dp)
-//                        .height(64.dp)
-//                )
-//            },
-//            keyboardActions = KeyboardActions(
-//                onDone = { focusManager.clearFocus() }
-//            )
-//        )
-//    }
-//
-//    @Composable
-//    fun GreetingPreview() {
-//        MaterialTheme {
-//            Greeting("Boiz")
-//        }
-//    }
 }

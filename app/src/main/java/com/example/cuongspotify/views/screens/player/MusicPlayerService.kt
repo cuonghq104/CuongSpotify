@@ -8,11 +8,14 @@ import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.cuongspotify.R
+import com.example.cuongspotify.configs.AppConstants
 
 class MusicPlayerService : Service() {
 
@@ -25,8 +28,8 @@ class MusicPlayerService : Service() {
     private var mediaPlayer: MediaPlayer? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val command = intent?.getStringExtra("command") ?: ""
-        if (command == "start") {
+        val command = intent?.getIntExtra(INTENT_KEY_COMMAND, 0) ?: 0
+        if (command == ServiceCommand.START.value) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     "music_channel",
@@ -62,10 +65,38 @@ class MusicPlayerService : Service() {
                 prepareAsync()
                 setOnPreparedListener {
                     start()
+                    val data = Bundle().apply {
+                        putString(BROADCAST_ACTION, BroadcastAction.UPDATE_PLAY_STATE.value)
+                        putBoolean(BROADCAST_MUSIC_IS_PLAYING, true)
+                    }
+                    sendMusicBroadcast(data)
                 }
             }
 
-        } else if (command == "stop") {
+        } else if (command == ServiceCommand.PAUSE.value) {
+            mediaPlayer?.let {
+                if (it.isPlaying) {
+                    it.pause()
+                }
+                val data = Bundle().apply {
+                    putString(BROADCAST_ACTION, BroadcastAction.UPDATE_PLAY_STATE.value)
+                    putBoolean(BROADCAST_MUSIC_IS_PLAYING, false)
+                }
+                sendMusicBroadcast(data)
+            }
+        } else if (command == ServiceCommand.RESUME.value) {
+            mediaPlayer?.let {
+                if (!it.isPlaying) {
+                    it.start()
+                }
+            }
+
+            val data = Bundle().apply {
+                putString(BROADCAST_ACTION, BroadcastAction.UPDATE_PLAY_STATE.value)
+                putBoolean(BROADCAST_MUSIC_IS_PLAYING, true)
+            }
+            sendMusicBroadcast(data)
+        } else {
             mediaPlayer?.let {
                 it.release()
             }
@@ -73,7 +104,29 @@ class MusicPlayerService : Service() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    private fun sendMusicBroadcast(data: Bundle) {
+        val intent = Intent("com.example.snippets.ACTION_UPDATE_DATA")
+        intent.putExtras(data)
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
+    }
+
     override fun onBind(p0: Intent?): IBinder? {
         TODO("Not yet implemented")
+    }
+
+    enum class ServiceCommand(val value: Int) {
+        START(1),
+        PAUSE(2),
+        RESUME(3)
+    }
+
+    enum class BroadcastAction(val value: String) {
+        UPDATE_PLAY_STATE("is_playing")
+    }
+
+    companion object {
+        const val INTENT_KEY_COMMAND = "command"
+        const val BROADCAST_MUSIC_IS_PLAYING = "is_playing"
+        const val BROADCAST_ACTION = "broadcast_action"
     }
 }

@@ -2,12 +2,18 @@ package com.example.cuongspotify
 
 import android.app.Activity
 import android.app.Activity.*
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -16,17 +22,33 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.activityViewModels
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.cuongspotify.databinding.ActivityMainBinding
 import com.example.cuongspotify.views.screens.auth.AuthActivity
 import com.example.cuongspotify.views.screens.home.HomeViewModal
+import com.example.cuongspotify.views.screens.home.MusicStateViewModel
+import com.example.cuongspotify.views.screens.player.MusicPlayerService
 
 class MainActivity : AppCompatActivity() {
     private var _binding: ActivityMainBinding?= null
     private val binding get() = _binding!!
 
     private val viewModel: HomeViewModal by viewModels()
+    private val musicViewModel: MusicStateViewModel by viewModels()
 
     private lateinit var toggle: ActionBarDrawerToggle
+
+    private var musicStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            val action = p1?.getStringExtra(MusicPlayerService.BROADCAST_ACTION)
+            when(action) {
+                MusicPlayerService.BroadcastAction.UPDATE_PLAY_STATE.value -> {
+                    val isPlaying = p1?.getBooleanExtra(MusicPlayerService.BROADCAST_MUSIC_IS_PLAYING, false) ?: false
+                    musicViewModel.setPlayingState(isPlaying)
+                }
+            }
+        }
+    }
 
     var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -47,6 +69,20 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setupUI()
         addListener()
+
+        subscribeToBroadcast()
+    }
+
+    private fun subscribeToBroadcast() {
+        val filter = IntentFilter("com.example.snippets.ACTION_UPDATE_DATA")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LocalBroadcastManager.getInstance(this@MainActivity).registerReceiver(musicStateReceiver, filter)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        LocalBroadcastManager.getInstance(this@MainActivity).unregisterReceiver(musicStateReceiver)
     }
 
     private fun addListener() {

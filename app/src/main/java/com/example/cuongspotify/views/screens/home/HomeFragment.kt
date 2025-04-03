@@ -46,7 +46,7 @@ class HomeFragment : Fragment() {
         findNavController().navigate(R.id.action_homeFragment_to_playerFragment)
         viewModel.setCurrentPlayingTrack(it as MusicTrack)
         val startServiceIntent = Intent(context, MusicPlayerService::class.java)
-        startServiceIntent.putExtra("command", "start")
+        startServiceIntent.putExtra(MusicPlayerService.INTENT_KEY_COMMAND, MusicPlayerService.ServiceCommand.START.value)
         context?.startService(startServiceIntent)
     }
     private var flag = false

@@ -13,6 +13,7 @@ object AppConstants {
         return "$SPOTIFY_LOGIN_BASE_URL?response_type=$SPOTIFY_LOGIN_RESPONSE_TYPE&client_id=$SPOTIFY_CLIENT_ID&scope=$SPOTIFY_LOGIN_SCOPE&redirect_uri=$SPOTIFY_LOGIN_REDIRECT_URL"
     }
 
+    const val BROADCAST_FILTER = "com.example.snippets.ACTION_UPDATE_DATA"
     const val SP_NAME = "Cuong_Spotify"
     const val SP_KEY_ACCESS_TOKEN = "access_token"
 }
