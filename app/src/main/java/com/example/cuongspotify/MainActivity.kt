@@ -1,27 +1,20 @@
 package com.example.cuongspotify
 
-import android.app.Activity
-import android.app.Activity.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.fragment.app.activityViewModels
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.cuongspotify.databinding.ActivityMainBinding
 import com.example.cuongspotify.views.screens.auth.AuthActivity
@@ -40,11 +33,19 @@ class MainActivity : AppCompatActivity() {
 
     private var musicStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
-            val action = p1?.getStringExtra(MusicPlayerService.BROADCAST_ACTION)
+            val action = p1?.getStringExtra(MusicPlayerService.BROADCAST_PARAMS_ACTION)
             when(action) {
                 MusicPlayerService.BroadcastAction.UPDATE_PLAY_STATE.value -> {
-                    val isPlaying = p1?.getBooleanExtra(MusicPlayerService.BROADCAST_MUSIC_IS_PLAYING, false) ?: false
+                    val isPlaying = p1.getBooleanExtra(MusicPlayerService.BROADCAST_PARAMS_MUSIC_IS_PLAYING, false)
                     musicViewModel.setPlayingState(isPlaying)
+                }
+                MusicPlayerService.BroadcastAction.UPDATE_DURATION.value -> {
+                    val duration = p1.getIntExtra(MusicPlayerService.BROADCAST_PARAMS_DURATION, 0)
+                    musicViewModel.setDuration(duration)
+                }
+                MusicPlayerService.BroadcastAction.UPDATE_PROGRESS.value -> {
+                    val progress = p1.getIntExtra(MusicPlayerService.BROADCAST_PARAMS_PROGRESS, 0)
+                    musicViewModel.setProgress(progress)
                 }
             }
         }

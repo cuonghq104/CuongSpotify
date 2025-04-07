@@ -15,7 +15,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.cuongspotify.R
-import com.example.cuongspotify.configs.AppConstants
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class MusicPlayerService : Service() {
 
@@ -26,7 +31,40 @@ class MusicPlayerService : Service() {
         .build()
 
     private var mediaPlayer: MediaPlayer? = null
+    private var jobUpdateProgress: Job? = null
 
+    private fun sendDurationBroadcast(duration: Int) {
+        val durationData = Bundle().apply {
+            putString(BROADCAST_PARAMS_ACTION, BroadcastAction.UPDATE_DURATION.value)
+            putInt(BROADCAST_PARAMS_DURATION, duration)
+        }
+        sendMusicBroadcast(durationData)
+    }
+
+    private fun sendPlayStateBroadcast(state: Boolean) {
+        val data = Bundle().apply {
+            putString(BROADCAST_PARAMS_ACTION, BroadcastAction.UPDATE_PLAY_STATE.value)
+            putBoolean(BROADCAST_PARAMS_MUSIC_IS_PLAYING, state)
+        }
+        sendMusicBroadcast(data)
+    }
+
+    private fun sendProgressBroadcast(progress: Int) {
+        val data = Bundle().apply {
+            putString(BROADCAST_PARAMS_ACTION, BroadcastAction.UPDATE_PROGRESS.value)
+            putInt(BROADCAST_PARAMS_PROGRESS, progress)
+        }
+        sendMusicBroadcast(data)
+    }
+
+    private fun launchProgressUpdateJob(mediaPlayer: MediaPlayer) {
+        jobUpdateProgress = CoroutineScope(Dispatchers.Default).launch {
+            while (isActive && mediaPlayer.isPlaying) {
+                sendProgressBroadcast(mediaPlayer.currentPosition)
+                delay(500)
+            }
+        }
+    }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val command = intent?.getIntExtra(INTENT_KEY_COMMAND, 0) ?: 0
         if (command == ServiceCommand.START.value) {
@@ -65,11 +103,9 @@ class MusicPlayerService : Service() {
                 prepareAsync()
                 setOnPreparedListener {
                     start()
-                    val data = Bundle().apply {
-                        putString(BROADCAST_ACTION, BroadcastAction.UPDATE_PLAY_STATE.value)
-                        putBoolean(BROADCAST_MUSIC_IS_PLAYING, true)
-                    }
-                    sendMusicBroadcast(data)
+                    sendPlayStateBroadcast(true)
+                    sendDurationBroadcast(it.duration)
+                    launchProgressUpdateJob(it)
                 }
             }
 
@@ -78,25 +114,29 @@ class MusicPlayerService : Service() {
                 if (it.isPlaying) {
                     it.pause()
                 }
-                val data = Bundle().apply {
-                    putString(BROADCAST_ACTION, BroadcastAction.UPDATE_PLAY_STATE.value)
-                    putBoolean(BROADCAST_MUSIC_IS_PLAYING, false)
-                }
-                sendMusicBroadcast(data)
+                sendPlayStateBroadcast(false)
+                jobUpdateProgress?.cancel()
             }
         } else if (command == ServiceCommand.RESUME.value) {
             mediaPlayer?.let {
                 if (!it.isPlaying) {
                     it.start()
                 }
+                launchProgressUpdateJob(it)
             }
 
-            val data = Bundle().apply {
-                putString(BROADCAST_ACTION, BroadcastAction.UPDATE_PLAY_STATE.value)
-                putBoolean(BROADCAST_MUSIC_IS_PLAYING, true)
+            sendPlayStateBroadcast(true)
+        } else if (command == ServiceCommand.SEEK_TO.value) {
+            val seekToValue = intent?.getIntExtra(SERVICE_PARAMS_SEEK_TO, 0) ?: 0
+            mediaPlayer?.let {
+                if (it.isPlaying) {
+                    it.pause()
+                }
+                it.seekTo(seekToValue)
+                it.start()
             }
-            sendMusicBroadcast(data)
-        } else {
+        }
+        else {
             mediaPlayer?.let {
                 it.release()
             }
@@ -117,16 +157,24 @@ class MusicPlayerService : Service() {
     enum class ServiceCommand(val value: Int) {
         START(1),
         PAUSE(2),
-        RESUME(3)
+        RESUME(3),
+        SEEK_TO(4)
     }
 
     enum class BroadcastAction(val value: String) {
-        UPDATE_PLAY_STATE("is_playing")
+        UPDATE_PLAY_STATE("is_playing"),
+        UPDATE_DURATION("duration"),
+        UPDATE_PROGRESS("progress")
     }
 
     companion object {
         const val INTENT_KEY_COMMAND = "command"
-        const val BROADCAST_MUSIC_IS_PLAYING = "is_playing"
-        const val BROADCAST_ACTION = "broadcast_action"
+
+        const val SERVICE_PARAMS_SEEK_TO = "seek_to_value"
+
+        const val BROADCAST_PARAMS_MUSIC_IS_PLAYING = "is_playing"
+        const val BROADCAST_PARAMS_DURATION = "duration"
+        const val BROADCAST_PARAMS_PROGRESS = "progress"
+        const val BROADCAST_PARAMS_ACTION = "broadcast_action"
     }
 }
