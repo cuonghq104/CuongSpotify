@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -16,10 +18,13 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import com.example.cuongspotify.databinding.ActivityMainBinding
 import com.example.cuongspotify.views.screens.auth.AuthActivity
 import com.example.cuongspotify.views.screens.home.HomeViewModal
 import com.example.cuongspotify.views.screens.home.MusicStateViewModel
+import com.example.cuongspotify.views.screens.player.MiniPlayerComposeView
 import com.example.cuongspotify.views.screens.player.MusicPlayerService
 
 class MainActivity : AppCompatActivity() {
@@ -106,6 +111,16 @@ class MainActivity : AppCompatActivity() {
                 }
                 false
             }
+
+            val navHostFragment = supportFragmentManager.findFragmentById(R.id.fcvContainer) as NavHostFragment
+            val navController = navHostFragment.navController
+            navController.addOnDestinationChangedListener{ _, destination, _ ->
+                if (destination.label == "fragment_player") {
+                    cvMiniPlayer.visibility = View.GONE
+                } else {
+                    cvMiniPlayer.visibility = View.VISIBLE
+                }
+            }
         }
     }
 
@@ -115,6 +130,10 @@ class MainActivity : AppCompatActivity() {
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                 insets
+            }
+
+            cvMiniPlayer.setContent {
+                MiniPlayerComposeView()
             }
         }
         toolbarConfig()
